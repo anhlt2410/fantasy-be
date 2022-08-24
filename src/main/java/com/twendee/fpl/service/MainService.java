@@ -288,7 +288,7 @@ public class MainService
             gwResult.setMoney(money * 1000);
 
             //TODO: BONUS FOR TWENDEE LEAGUE
-            if (gwResult.getPosition() == 1 && leagueSize == 6)
+            if (gwResult.getPosition() == 1)
             {
                 gwResult.setMoney(TOP_BONUS_PRICE);
             }
@@ -319,7 +319,7 @@ public class MainService
     @Scheduled(cron = "0 0/10 * * * *")
     public void updateMainTable()
     {
-        System.out.println("Start updateMainTable");
+        System.out.println("Start updateMainTable::" + new Date());
         Integer gameWeek = CURRENT_GW;
         updateClassicOrderAndMoney(gameWeek);
 
@@ -327,12 +327,11 @@ public class MainService
         List<Team> teams = teamRepository.findAllByOrderByPositionAsc();
         teams.forEach(team -> {
             List<GameWeekResult> gameWeekResults = gameWeekResultRepository.findByTeamAndGameWeekLessThan(team, gameWeek + 1);
-            int sumPoint = gameWeekResults.stream().mapToInt(GameWeekResult::getH2hPoint).sum();
+            int sumPoint = gameWeekResults.stream().mapToInt(GameWeekResult::getPoint).sum();
             double sumMoney = gameWeekResults.stream().mapToDouble(GameWeekResult::getMoney).sum();
-            double sumH2HMoney = gameWeekResults.stream().mapToDouble(GameWeekResult::getH2hMoney).sum();
             team.setPoint(sumPoint);
             team.setMoney(sumMoney);
-            team.setH2hMoney(sumH2HMoney);
+//            team.setH2hMoney(sumH2HMoney);
         });
 
         teams.sort(Comparator.comparing(Team::getPoint).reversed());

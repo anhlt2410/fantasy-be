@@ -21,8 +21,7 @@ public class SpringFoxConfig extends WebMvcConfigurerAdapter {
                 .select()
                 .apis(RequestHandlerSelectors.any())
                 .paths(PathSelectors.any())
-                .build()
-                .pathMapping("/fantasy-football") ;
+                .build();
     }
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
