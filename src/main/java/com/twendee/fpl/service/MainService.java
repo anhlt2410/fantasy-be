@@ -190,7 +190,7 @@ public class MainService
             gameWeekResult.setLocalPoint(h2hPoint + gameWeekResult.getNextFreeTransferBonus() * 4);
         }
         gameWeekResultRepository.save(gameWeekResult);
-
+        updateClassicOrderAndMoney(dto.getGameWeek());
 
         return new GameWeekResultDTO(gameWeekResult);
     }
