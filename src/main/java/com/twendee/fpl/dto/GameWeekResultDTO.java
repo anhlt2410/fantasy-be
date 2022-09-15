@@ -25,6 +25,8 @@ public class GameWeekResultDTO
     private double h2hPoint;
     private double bonusTransfer = 0;
 
+    private boolean voucher;
+
     public GameWeekResultDTO(GameWeekResult gameWeekResult)
     {
         this.id = gameWeekResult.getId();
@@ -39,6 +41,7 @@ public class GameWeekResultDTO
         this.h2hPoint = gameWeekResult.getH2hPoint();
         this.bonusTransfer = gameWeekResult.getNextFreeTransferBonus();
         this.localPoint = gameWeekResult.getLocalPoint();
+        this.voucher = gameWeekResult.getVoucher();
 
 
 //        if (gameWeekResult.getRival() != null)
