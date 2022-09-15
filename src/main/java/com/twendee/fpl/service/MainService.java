@@ -292,7 +292,7 @@ public class MainService {
         List<Team> teams = teamRepository.findAllByOrderByPositionAsc();
         teams.forEach(team -> {
             List<GameWeekResult> gameWeekResults = gameWeekResultRepository.findByTeamAndGameWeekLessThan(team, gameWeek + 1);
-            int sumPoint = gameWeekResults.stream().mapToInt(GameWeekResult::getPoint).sum();
+            int sumPoint = gameWeekResults.stream().mapToInt(GameWeekResult::getLocalPoint).sum();
             double sumMoney = gameWeekResults.stream().mapToDouble(GameWeekResult::getMoney).sum();
             team.setPoint(sumPoint);
             team.setMoney(sumMoney);
