@@ -3,6 +3,7 @@ package com.twendee.fpl.service;
 import com.twendee.fpl.dto.*;
 import com.twendee.fpl.model.GameWeekResult;
 import com.twendee.fpl.model.Team;
+import com.twendee.fpl.model.enumeration.TopType;
 import com.twendee.fpl.repository.GameWeekResultRepository;
 import com.twendee.fpl.repository.TeamRepository;
 import io.swagger.models.auth.In;
@@ -70,7 +71,7 @@ public class MainService {
         tops.addAll(topPoint.stream().map(TopDTO::new).collect(Collectors.toList()));
 
         Team team = teamRepository.findFirstByOrderByMoneyAsc();
-        tops.add(new TopDTO(team.getName(), team.getFplName(), team.getMoney().intValue()));
+        tops.add(new TopDTO(TopType.MONEY, team.getName(), team.getFplName(), team.getMoney().intValue()));
 
         return tops;
     }
@@ -246,6 +247,10 @@ public class MainService {
         }
 
         for (GameWeekResult gwResult : gameWeekResults) {
+
+            double money = 0 - Math.ceil((moneyByPoint.get(gwResult.getLocalPoint()).money / moneyByPoint.get(gwResult.getLocalPoint()).count) / 1000);
+            gwResult.setMoney(money * 1000);
+
             if (gwResult.getPosition() == 1) {
                 gwResult.setVoucher(true);
             } else {
