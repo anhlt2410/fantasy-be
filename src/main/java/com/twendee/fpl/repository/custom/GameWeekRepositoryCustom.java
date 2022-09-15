@@ -1,5 +1,6 @@
 package com.twendee.fpl.repository.custom;
 
+import com.twendee.fpl.dto.TopDTO;
 import com.twendee.fpl.model.GameWeekResult;
 import com.twendee.fpl.model.Team;
 import org.springframework.stereotype.Repository;

@@ -1,11 +1,9 @@
 package com.twendee.fpl.repository.impl;
 
-import com.twendee.fpl.model.BaseEntity;
 import com.twendee.fpl.model.GameWeekResult;
 import com.twendee.fpl.model.Team;
 import com.twendee.fpl.repository.custom.GameWeekRepositoryCustom;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;

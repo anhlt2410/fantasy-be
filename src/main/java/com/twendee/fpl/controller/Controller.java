@@ -68,6 +68,11 @@ public class Controller {
         return new ResponseEntity<GameWeekResultDTO>(new GameWeekResultDTO(gameWeekResult), HttpStatus.OK);
     }
 
+    @GetMapping("/get-tops")
+    public ResponseEntity<List<TopDTO>> getTops() {
+        return new ResponseEntity<>(mainService.getTop(), HttpStatus.OK);
+    }
+
     @GetMapping("/get-game-week-info")
     public ResponseEntity<FullGameWeekResultDTO> getGameWeekInfo(@RequestParam(name = "gameWeek") Integer gameWeek) {
         FullGameWeekResultDTO dto = mainService.getFullGameWeekResult(gameWeek);

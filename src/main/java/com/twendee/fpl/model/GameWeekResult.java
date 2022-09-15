@@ -1,5 +1,6 @@
 package com.twendee.fpl.model;
 
+import com.twendee.fpl.config.BooleanYnConverter;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,4 +33,8 @@ public class GameWeekResult extends BaseEntity{
     private Double money = 0D;
     private Double h2hMoney = 0D;
     private Integer nextFreeTransferBonus = 0;
+
+    @Column(length = 1)
+    @Convert(converter = BooleanYnConverter.class)
+    private Boolean voucher;
 }

@@ -21,16 +21,14 @@ import static com.twendee.fpl.constant.Constant.*;
 @Slf4j
 @Service
 @Transactional
-public class MainService
-{
+public class MainService {
 
     @Autowired
     TeamRepository teamRepository;
     @Autowired
     GameWeekResultRepository gameWeekResultRepository;
 
-    public FullGameWeekResultDTO getFullGameWeekResult(Integer gameWeek)
-    {
+    public FullGameWeekResultDTO getFullGameWeekResult(Integer gameWeek) {
         FullGameWeekResultDTO dto = new FullGameWeekResultDTO();
         List<GameWeekResult> gameWeekResults = gameWeekResultRepository.findByGameWeek(gameWeek);
         List<GameWeekResultDTO> gameWeekResultDTOS = gameWeekResults.stream().map(GameWeekResultDTO::new).sorted(Comparator.comparing(GameWeekResultDTO::getPosition)).collect(Collectors.toList());
@@ -39,8 +37,7 @@ public class MainService
         List<Long> doneList = new ArrayList<>();
         List<PairH2HDTO> h2HDTOList = new ArrayList<>();
         gameWeekResults.forEach(g -> {
-            if (!doneList.contains(g.getTeam().getFplId()))
-            {
+            if (!doneList.contains(g.getTeam().getFplId())) {
                 PairH2HDTO pairH2HDTO = new PairH2HDTO();
                 pairH2HDTO.setTeam1fplId(g.getTeam().getFplId());
                 pairH2HDTO.setTeam1Name(g.getTeam().getName());
@@ -48,11 +45,9 @@ public class MainService
                 pairH2HDTO.setTeam1Point(g.getH2hPoint());
                 doneList.add(g.getTeam().getFplId());
 
-                if (g.getRival() != null)
-                {
+                if (g.getRival() != null) {
                     GameWeekResult rival = gameWeekResults.stream().filter(gameWeekResult -> gameWeekResult.getTeam().getFplId().equals(g.getRival().getFplId())).findAny().orElse(null);
-                    if (rival != null)
-                    {
+                    if (rival != null) {
                         pairH2HDTO.setTeam2fplId(rival.getTeam().getFplId());
                         pairH2HDTO.setTeam2Name(rival.getTeam().getFplName());
                         pairH2HDTO.setTeam2fplName(rival.getTeam().getFplName());
@@ -69,11 +64,20 @@ public class MainService
         return dto;
     }
 
-    public String addTeam(ListTeamDTO dto)
-    {
+    public List<TopDTO> getTop() {
+        List<TopDTO> tops = new ArrayList<>();
+        List<GameWeekResult> topPoint = gameWeekResultRepository.findByPoint();
+        tops.addAll(topPoint.stream().map(TopDTO::new).collect(Collectors.toList()));
+
+        Team team = teamRepository.findFirstByOrderByMoneyAsc();
+        tops.add(new TopDTO(team.getName(), team.getFplName(), team.getMoney().intValue()));
+
+        return tops;
+    }
+
+    public String addTeam(ListTeamDTO dto) {
         List<Team> listToCreate = new ArrayList<>();
-        try
-        {
+        try {
             dto.getList().forEach(t -> {
                 Team team = new Team();
                 team.setName(t.getName());
@@ -84,37 +88,29 @@ public class MainService
             });
             teamRepository.saveAll(listToCreate);
             return "SUCCESS";
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             return "FAIL";
         }
     }
 
-    public String updateFixture(ListH2HDTO dtos)
-    {
+    public String updateFixture(ListH2HDTO dtos) {
         List<GameWeekResult> gameWeekResults = gameWeekResultRepository.findByGameWeek(dtos.getGameWeek());
 
-        if (gameWeekResults.isEmpty())
-        {
+        if (gameWeekResults.isEmpty()) {
             gameWeekResults = createNewGameWeekForAll(dtos.getGameWeek());
         }
 
 
         List<H2HDTO> h2HDTOS = dtos.getList();
 
-        try
-        {
-            for (GameWeekResult gameWeekResult : gameWeekResults)
-            {
+        try {
+            for (GameWeekResult gameWeekResult : gameWeekResults) {
                 Long teamFplId = gameWeekResult.getTeam().getFplId();
                 Long rivalFplId = findRivalFromH2H(teamFplId, h2HDTOS);
                 gameWeekResult.setRival(teamRepository.findByFplId(rivalFplId));
 
             }
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             return "FAIL";
         }
 
@@ -124,14 +120,12 @@ public class MainService
         return "SUCCESS - created data for " + gameWeekResults.size() + " game week";
     }
 
-    private List<GameWeekResult> createNewGameWeekForAll(int gw)
-    {
+    private List<GameWeekResult> createNewGameWeekForAll(int gw) {
         List<Team> teams = teamRepository.findAll();
 
         List<GameWeekResult> gameWeekResults = new ArrayList<>();
 
-        for (Team team : teams)
-        {
+        for (Team team : teams) {
             GameWeekResult gameWeekResult = new GameWeekResult();
             gameWeekResult.setGameWeek(gw);
             gameWeekResult.setTeam(team);
@@ -142,18 +136,14 @@ public class MainService
         return gameWeekResults;
     }
 
-    private Long findRivalFromH2H(Long teamFplId, List<H2HDTO> h2HDTOS)
-    {
+    private Long findRivalFromH2H(Long teamFplId, List<H2HDTO> h2HDTOS) {
         H2HDTO rival = h2HDTOS.stream()
                 .filter(item -> (item.getTeam1().equals(teamFplId)))
                 .findAny().orElse(null);
 
-        if (rival != null)
-        {
+        if (rival != null) {
             return rival.getTeam2();
-        }
-        else
-        {
+        } else {
             rival = h2HDTOS.stream()
                     .filter(item -> (item.getTeam2().equals(teamFplId)))
                     .findAny().orElse(null);
@@ -162,14 +152,12 @@ public class MainService
         }
     }
 
-    public GameWeekResultDTO updateGameWeekResult(GameWeekPointDTO dto)
-    {
+    public GameWeekResultDTO updateGameWeekResult(GameWeekPointDTO dto) {
 
         Team team = teamRepository.findByFplId(dto.getTeamId());
         GameWeekResult gameWeekResult = gameWeekResultRepository.findByGameWeekAndTeam(dto.getGameWeek(), team);
 
-        if (gameWeekResult == null)
-        {
+        if (gameWeekResult == null) {
             gameWeekResult = new GameWeekResult();
             gameWeekResult.setGameWeek(dto.getGameWeek());
             gameWeekResult.setTeam(team);
@@ -185,8 +173,7 @@ public class MainService
         //TODO: check local Point (need to check bonus for top+bottom of previous gameweek)
         gameWeekResult.setLocalPoint(h2hPoint);
 
-        if (dto.getMinusPoints() < 0)
-        {
+        if (dto.getMinusPoints() < 0) {
             gameWeekResult.setLocalPoint(h2hPoint + gameWeekResult.getNextFreeTransferBonus() * 4);
         }
         gameWeekResultRepository.save(gameWeekResult);
@@ -196,8 +183,7 @@ public class MainService
     }
 
 
-    private void updateClassicOrderAndMoney(Integer gameWeek)
-    {
+    private void updateClassicOrderAndMoney(Integer gameWeek) {
         List<GameWeekResult> gameWeekResults = gameWeekResultRepository.findByGameWeek(gameWeek);
         Integer leagueSize = gameWeekResults.size();
         gameWeekResults.sort(Comparator.comparing(GameWeekResult::getLocalPoint).reversed());
@@ -205,45 +191,26 @@ public class MainService
         List<GameWeekResult> nextGwBonusTeams = new ArrayList<>();
         int order = 1;
         GameWeekResult previous;
-        for (GameWeekResult result : gameWeekResults)
-        {
+        for (GameWeekResult result : gameWeekResults) {
             result.setPosition(null);
         }
-        for (GameWeekResult result : gameWeekResults)
-        {
+        for (GameWeekResult result : gameWeekResults) {
             previous = order == 1 ? result : gameWeekResults.get(order - 2);
-//            if (order <= gameWeekResults.size() / 2)
-//            {
-//                result.setMoney(0D);
-//            }
-//            else
-//            {
-//                //TODO: HANDLE CASE EQUAL POINTS
-//                result.setMoney((order - gameWeekResults.size() / 2) * UNIT_PRICE);
-//            }
-
             Integer rivalPoint = getRivalPoint(result.getRival(), gameWeekResults);
-            if (rivalPoint != null && result.getH2hPoint() < rivalPoint)
-            {
+            if (rivalPoint != null && result.getH2hPoint() < rivalPoint) {
                 result.setH2hMoney(UNIT_PRICE);
-            }
-            else
-            {
+            } else {
                 result.setH2hMoney(0d);
             }
 
-
-            if (result.getLocalPoint().equals(previous.getLocalPoint()) && previous.getPosition() != null)
-            {
+            if (result.getLocalPoint().equals(previous.getLocalPoint()) && previous.getPosition() != null) {
                 result.setPosition(previous.getPosition());
-            }
-            else
-            {
+            } else {
                 result.setPosition(order);
             }
             GameWeekResult nextGameWeek = gameWeekResultRepository.findByGameWeekAndTeam(gameWeek + 1, result.getTeam());
 
-            if(nextGameWeek != null ) {
+            if (nextGameWeek != null) {
                 if (result.getPosition() == 1 || result.getPosition().equals(leagueSize)) {
                     nextGameWeek.setNextFreeTransferBonus(1);
                 } else {
@@ -263,16 +230,12 @@ public class MainService
         Map<Integer, CountMoney> moneyByPoint = new HashMap<>();
 
         Integer MAX_MONEY = (int) (gameWeekResults.size() / 2 * STEP);
-        for (GameWeekResult gwResult : gameWeekResults)
-        {
+        for (GameWeekResult gwResult : gameWeekResults) {
             int index = gameWeekResults.indexOf(gwResult);
-            if (moneyByPoint.get(gwResult.getLocalPoint()) == null)
-            {
+            if (moneyByPoint.get(gwResult.getLocalPoint()) == null) {
                 double money = MAX_MONEY - index * STEP;
                 moneyByPoint.put(gwResult.getLocalPoint(), new CountMoney(1, money > 0 ? money : 0));
-            }
-            else
-            {
+            } else {
                 double currentMoney = MAX_MONEY - index * STEP;
                 int countIncreas = moneyByPoint.get(gwResult.getLocalPoint()).count + 1;
                 double money = moneyByPoint.get(gwResult.getLocalPoint()).money + (currentMoney > 0 ? currentMoney : 0);
@@ -282,15 +245,11 @@ public class MainService
             }
         }
 
-        for (GameWeekResult gwResult : gameWeekResults)
-        {
-            double money = 0 - Math.ceil((1.0 * moneyByPoint.get(gwResult.getLocalPoint()).money / moneyByPoint.get(gwResult.getLocalPoint()).count) / 1000);
-            gwResult.setMoney(money * 1000);
-
-            //TODO: BONUS FOR TWENDEE LEAGUE
-            if (gwResult.getPosition() == 1)
-            {
-                gwResult.setMoney(TOP_BONUS_PRICE);
+        for (GameWeekResult gwResult : gameWeekResults) {
+            if (gwResult.getPosition() == 1) {
+                gwResult.setVoucher(true);
+            } else {
+                gwResult.setVoucher(false);
             }
         }
 
@@ -298,15 +257,10 @@ public class MainService
         gameWeekResultRepository.saveAll(nextGwBonusTeams);
     }
 
-    private Integer getRivalPoint(Team rival, List<GameWeekResult> gameWeekResults)
-    {
-        if (rival == null)
-        {
+    private Integer getRivalPoint(Team rival, List<GameWeekResult> gameWeekResults) {
+        if (rival == null) {
             return null;
-        }
-
-        else
-        {
+        } else {
             GameWeekResult rivalResult = gameWeekResults.stream()
                     .filter(item -> item.getTeam().getId().equals(rival.getId()))
                     .findAny().orElse(null);
@@ -317,10 +271,9 @@ public class MainService
 
 
     @Scheduled(cron = "0 0/10 * * * *")
-    public void updateMainTable()
-    {
+    public void updateMainTable() {
         System.out.println("Start updateMainTable::" + new Date());
-        Integer gameWeek = CURRENT_GW;
+        Integer gameWeek = gameWeekResultRepository.getMaxGameWeek();
         updateClassicOrderAndMoney(gameWeek);
 
 
@@ -331,28 +284,23 @@ public class MainService
             double sumMoney = gameWeekResults.stream().mapToDouble(GameWeekResult::getMoney).sum();
             team.setPoint(sumPoint);
             team.setMoney(sumMoney);
-//            team.setH2hMoney(sumH2HMoney);
+            team.setVoucher(gameWeekResultRepository.countAllByTeamAndVoucherIsTrue(team));
         });
 
         teams.sort(Comparator.comparing(Team::getPoint).reversed());
         int order = 1;
 
-        for (Team team : teams)
-        {
+        for (Team team : teams) {
             team.setPosition(null);
         }
 
         Team previous;
-        for (Team team : teams)
-        {
+        for (Team team : teams) {
             previous = order == 1 ? team : teams.get(order - 2);
 
-            if (previous.getPosition() != null && team.getPoint().equals(previous.getPoint()))
-            {
+            if (previous.getPosition() != null && team.getPoint().equals(previous.getPoint())) {
                 team.setPosition(previous.getPosition());
-            }
-            else
-            {
+            } else {
                 team.setPosition(order);
             }
             order++;
@@ -362,13 +310,11 @@ public class MainService
 
 }
 
-class CountMoney
-{
+class CountMoney {
     int count;
     double money;
 
-    CountMoney(int count, double money)
-    {
+    CountMoney(int count, double money) {
         this.count = count;
         this.money = money;
     }

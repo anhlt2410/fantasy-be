@@ -19,4 +19,5 @@ public class Team extends BaseEntity{
     private Integer position = 0;
     private Double money = 0D;
     private Double h2hMoney = 0D;
+    private Integer voucher;
 }
