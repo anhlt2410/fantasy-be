@@ -11,12 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Comparator;
+import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -95,6 +93,12 @@ public class Controller {
     public ResponseEntity<String> updateMainTable() {
         mainService.updateMainTable();
         return new ResponseEntity<String>("OK", HttpStatus.OK);
+    }
+
+    @PostMapping("/update-all-team-points")
+    public ResponseEntity<String> updateAllTeamPoint(@RequestParam("gameWeek") Integer gameWeek) throws IOException {
+        mainService.updateAllTeamsPoint(gameWeek);
+        return new ResponseEntity<>("OK", HttpStatus.OK);
     }
 
 

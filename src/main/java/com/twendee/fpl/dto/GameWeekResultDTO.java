@@ -25,7 +25,7 @@ public class GameWeekResultDTO
     private double h2hPoint;
     private double bonusTransfer = 0;
 
-    private boolean voucher;
+    private Boolean voucher;
 
     public GameWeekResultDTO(GameWeekResult gameWeekResult)
     {

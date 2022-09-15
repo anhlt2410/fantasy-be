@@ -6,14 +6,21 @@ import com.twendee.fpl.model.Team;
 import com.twendee.fpl.model.enumeration.TopType;
 import com.twendee.fpl.repository.GameWeekResultRepository;
 import com.twendee.fpl.repository.TeamRepository;
-import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -178,7 +185,7 @@ public class MainService {
             gameWeekResult.setLocalPoint(h2hPoint + gameWeekResult.getNextFreeTransferBonus() * 4);
         }
         gameWeekResultRepository.save(gameWeekResult);
-        updateClassicOrderAndMoney(dto.getGameWeek());
+//        updateClassicOrderAndMoney(dto.getGameWeek());
 
         return new GameWeekResultDTO(gameWeekResult);
     }
@@ -311,6 +318,58 @@ public class MainService {
             order++;
         }
         teamRepository.saveAll(teams);
+    }
+
+    //Update points from FPL APIs
+
+    @Scheduled(cron = "0 0/10 * * * *")
+    public void updateCurrentGameWeekAllTeamsPoint() throws IOException {
+        updateAllTeamsPoint(null);
+    }
+    public void updateAllTeamsPoint(Integer gameWeek) throws IOException {
+        HttpGet gwHttpGet = new HttpGet("https://fantasy.premierleague.com/api/entry/536158/");
+        gwHttpGet.addHeader("Content-Type", "application/json");
+        HttpClientBuilder gwBuilder = HttpClientBuilder.create();
+        HttpClient gwClient = gwBuilder.build();
+        HttpResponse gwResponse = gwClient.execute(gwHttpGet);
+
+        HttpEntity gwEntity = gwResponse.getEntity();
+        String gwResult = EntityUtils.toString(gwEntity, "UTF-8");
+        JSONObject gwEntry = new JSONObject(gwResult);
+
+        int currentGameWeek = gameWeek == null ? gwEntry.getInt("current_event") : gameWeek;
+
+        List<Team> teams = teamRepository.findAll();
+        teams.forEach(team -> {
+            try {
+                updatePointFromAPIs(team.getFplId(), currentGameWeek);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        updateClassicOrderAndMoney(currentGameWeek);
+    }
+    public void updatePointFromAPIs(long teamId, int currentGameWeek) throws IOException {
+        HttpGet httpGet = new HttpGet("https://fantasy.premierleague.com/api/entry/" + teamId + "/event/" + currentGameWeek + "/picks/");
+        httpGet.addHeader("Content-Type", "application/json");
+        HttpClientBuilder builder = HttpClientBuilder.create();
+        HttpClient client = builder.build();
+        HttpResponse response = client.execute(httpGet);
+
+        HttpEntity entity = response.getEntity();
+        String result = EntityUtils.toString(entity, "UTF-8");
+        JSONObject jsonObject = new JSONObject(result);
+        JSONObject entry = jsonObject.getJSONObject("entry_history");
+
+        GameWeekPointDTO dto = new GameWeekPointDTO();
+        dto.setTeamId(teamId);
+        dto.setGameWeek(currentGameWeek);
+        dto.setPoint(entry.getInt("points"));
+        dto.setTransfer(entry.getInt("event_transfers"));
+        dto.setMinusPoints(entry.getInt("event_transfers_cost")*(-1));
+
+        updateGameWeekResult(dto);
     }
 
 }
