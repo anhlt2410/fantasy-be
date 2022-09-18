@@ -105,7 +105,7 @@ public class Controller {
 
     @GetMapping("/currentGameweek")
     public ResponseEntity<Integer> currentGameweek() {
-        return new ResponseEntity<Integer>(Constant.CURRENT_GW, HttpStatus.OK);
+        return new ResponseEntity<Integer>(gameWeekResultRepository.getMaxGameWeek(), HttpStatus.OK);
     }
 
 
