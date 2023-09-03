@@ -3,25 +3,23 @@ package com.twendee.fpl.service;
 import com.twendee.fpl.dto.*;
 import com.twendee.fpl.model.GameWeekResult;
 import com.twendee.fpl.model.Team;
-import com.twendee.fpl.model.enumeration.TopType;
 import com.twendee.fpl.repository.GameWeekResultRepository;
 import com.twendee.fpl.repository.TeamRepository;
+import com.twendee.fpl.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static com.twendee.fpl.constant.Constant.*;
@@ -78,7 +76,7 @@ public class MainService {
         tops.addAll(topPoint.stream().map(TopDTO::new).collect(Collectors.toList()));
 
         Team team = teamRepository.findFirstByOrderByMoneyAsc();
-        tops.add(new TopDTO(TopType.MONEY, team.getName(), team.getFplName(), team.getMoney().intValue()));
+        tops.add(new TopDTO(team));
 
         return tops;
     }
@@ -101,7 +99,30 @@ public class MainService {
         }
     }
 
-    public String updateFixture(ListH2HDTO dtos) {
+    public GameWeekH2HDTO getH2HFixturesByGameWeek(Long leagueId, Integer gameWeek) throws IOException {
+        String uri = "https://fantasy.premierleague.com/api/leagues-h2h-matches/league/" + leagueId + "/?page=1&event=" + gameWeek;
+        HttpResponse response = Utils.requestGet(uri);
+        HttpEntity entity = response.getEntity();
+        String result = EntityUtils.toString(entity, "UTF-8");
+        JSONObject resultObject = new JSONObject(result);
+        JSONArray arr = resultObject.getJSONArray("results");
+        GameWeekH2HDTO gameWeekH2HDTO = new GameWeekH2HDTO();
+        gameWeekH2HDTO.setGameWeek(gameWeek);
+        arr.forEach(item -> {
+            JSONObject pair = (JSONObject) item;
+            Long rivalId1 = pair.isNull("entry_1_entry") ? null : pair.getLong("entry_1_entry");
+            Long rivalId2 = pair.isNull("entry_2_entry") ? null : pair.getLong("entry_2_entry");
+            H2HDTO h2HDTO = H2HDTO.builder()
+                    .teamId1(rivalId1)
+                    .teamId2(rivalId2)
+                    .build();
+            gameWeekH2HDTO.getH2HDTOList().add(h2HDTO);
+        });
+
+        return gameWeekH2HDTO;
+    }
+
+    public String updateFixture(GameWeekH2HDTO dtos) {
         List<GameWeekResult> gameWeekResults = gameWeekResultRepository.findByGameWeek(dtos.getGameWeek());
 
         if (gameWeekResults.isEmpty()) {
@@ -109,7 +130,7 @@ public class MainService {
         }
 
 
-        List<H2HDTO> h2HDTOS = dtos.getList();
+        List<H2HDTO> h2HDTOS = dtos.getH2HDTOList();
 
         try {
             for (GameWeekResult gameWeekResult : gameWeekResults) {
@@ -146,29 +167,41 @@ public class MainService {
 
     private Long findRivalFromH2H(Long teamFplId, List<H2HDTO> h2HDTOS) {
         H2HDTO rival = h2HDTOS.stream()
-                .filter(item -> (item.getTeam1().equals(teamFplId)))
+                .filter(item -> (item.getTeamId1().equals(teamFplId)))
                 .findAny().orElse(null);
 
         if (rival != null) {
-            return rival.getTeam2();
+            return rival.getTeamId2();
         } else {
             rival = h2HDTOS.stream()
-                    .filter(item -> (item.getTeam2().equals(teamFplId)))
+                    .filter(item -> (item.getTeamId2().equals(teamFplId)))
                     .findAny().orElse(null);
 
-            return rival != null ? rival.getTeam1() : null;
+            return rival != null ? rival.getTeamId1() : null;
         }
     }
 
-    public GameWeekResultDTO updateGameWeekResult(GameWeekPointDTO dto) {
+    public GameWeekResultDTO updateGameWeekResult(GameWeekPointDTO dto) throws IOException {
 
         Team team = teamRepository.findByFplId(dto.getTeamId());
         GameWeekResult gameWeekResult = gameWeekResultRepository.findByGameWeekAndTeam(dto.getGameWeek(), team);
 
+        GameWeekH2HDTO gameWeekH2HDTO = getH2HFixturesByGameWeek(437074L, dto.getGameWeek());
         if (gameWeekResult == null) {
             gameWeekResult = new GameWeekResult();
             gameWeekResult.setGameWeek(dto.getGameWeek());
             gameWeekResult.setTeam(team);
+
+            //H2H rival
+            GameWeekResult finalGameWeekResult = gameWeekResult;
+            gameWeekH2HDTO.getH2HDTOList().forEach(h2HDTO -> {
+                if (team.getFplId().equals(h2HDTO.getTeamId1())) {
+                    finalGameWeekResult.setRival(h2HDTO.getTeamId2() == null ? null : teamRepository.findByFplId(h2HDTO.getTeamId2()));
+                }
+                if (team.getFplId().equals(h2HDTO.getTeamId2())) {
+                    finalGameWeekResult.setRival(h2HDTO.getTeamId1() == null ? null : teamRepository.findByFplId(h2HDTO.getTeamId1()));
+                }
+            });
         }
 
         gameWeekResult.setTransfer(dto.getTransfer());
@@ -185,7 +218,7 @@ public class MainService {
             gameWeekResult.setLocalPoint(h2hPoint + gameWeekResult.getNextFreeTransferBonus() * 4);
         }
         gameWeekResultRepository.save(gameWeekResult);
-//        updateClassicOrderAndMoney(dto.getGameWeek());
+        updateClassicOrderAndMoney(dto.getGameWeek());
 
         return new GameWeekResultDTO(gameWeekResult);
     }
@@ -193,7 +226,7 @@ public class MainService {
 
     private void updateClassicOrderAndMoney(Integer gameWeek) {
         List<GameWeekResult> gameWeekResults = gameWeekResultRepository.findByGameWeek(gameWeek);
-        Integer leagueSize = gameWeekResults.size();
+//        Integer leagueSize = gameWeekResults.size();
         gameWeekResults.sort(Comparator.comparing(GameWeekResult::getLocalPoint).reversed());
 
         List<GameWeekResult> nextGwBonusTeams = new ArrayList<>();
@@ -204,7 +237,7 @@ public class MainService {
         }
         for (GameWeekResult result : gameWeekResults) {
             previous = order == 1 ? result : gameWeekResults.get(order - 2);
-            Integer rivalPoint = getRivalPoint(result.getRival(), gameWeekResults);
+            Integer rivalPoint = getRivalPoint(gameWeek, result.getRival(), gameWeekResults);
             if (rivalPoint != null && result.getH2hPoint() < rivalPoint) {
                 result.setH2hMoney(UNIT_PRICE);
             } else {
@@ -216,20 +249,18 @@ public class MainService {
             } else {
                 result.setPosition(order);
             }
-            GameWeekResult nextGameWeek = gameWeekResultRepository.findByGameWeekAndTeam(gameWeek + 1, result.getTeam());
+//            GameWeekResult nextGameWeek = gameWeekResultRepository.findByGameWeekAndTeam(gameWeek + 1, result.getTeam());
 
-            if (nextGameWeek != null) {
-                if (result.getPosition() == 1 || result.getPosition().equals(leagueSize)) {
-                    nextGameWeek.setNextFreeTransferBonus(1);
-                } else {
-                    nextGameWeek.setNextFreeTransferBonus(0);
-                }
-                nextGwBonusTeams.add(nextGameWeek);
-
-            }
-
+//            if (nextGameWeek != null) {
+//                if (result.getPosition() == 1 || result.getPosition().equals(leagueSize)) {
+//                    nextGameWeek.setNextFreeTransferBonus(1);
+//                } else {
+//                    nextGameWeek.setNextFreeTransferBonus(0);
+//                }
+//                nextGwBonusTeams.add(nextGameWeek);
+//
+//            }
             order++;
-
         }
 
         gameWeekResults.sort(Comparator.comparing(GameWeekResult::getLocalPoint));
@@ -245,13 +276,15 @@ public class MainService {
                 moneyByPoint.put(gwResult.getLocalPoint(), new CountMoney(1, money > 0 ? money : 0));
             } else {
                 double currentMoney = MAX_MONEY - index * STEP;
-                int countIncreas = moneyByPoint.get(gwResult.getLocalPoint()).count + 1;
+                int countIncrease = moneyByPoint.get(gwResult.getLocalPoint()).count + 1;
                 double money = moneyByPoint.get(gwResult.getLocalPoint()).money + (currentMoney > 0 ? currentMoney : 0);
 
-                moneyByPoint.put(gwResult.getLocalPoint(), new CountMoney(countIncreas, money > 0 ? money : 0));
+                moneyByPoint.put(gwResult.getLocalPoint(), new CountMoney(countIncrease, money > 0 ? money : 0));
 
             }
         }
+
+        long numberOfTop1 = gameWeekResults.stream().filter(gwr -> gwr.getVoucher() != null && gwr.getVoucher()).count();
 
         for (GameWeekResult gwResult : gameWeekResults) {
 
@@ -260,18 +293,23 @@ public class MainService {
 
             if (gwResult.getPosition() == 1) {
                 gwResult.setVoucher(true);
+                gwResult.setGameWeekWinnerMoney(VOUCHER/numberOfTop1);
             } else {
                 gwResult.setVoucher(false);
             }
         }
 
         gameWeekResultRepository.saveAll(gameWeekResults);
-        gameWeekResultRepository.saveAll(nextGwBonusTeams);
+//        gameWeekResultRepository.saveAll(nextGwBonusTeams);
     }
 
-    private Integer getRivalPoint(Team rival, List<GameWeekResult> gameWeekResults) {
+    private Integer getRivalPoint(Integer gameWeek, Team rival, List<GameWeekResult> gameWeekResults) {
         if (rival == null) {
-            return null;
+            try {
+                return getAverageByGameWeek(gameWeek);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         } else {
             GameWeekResult rivalResult = gameWeekResults.stream()
                     .filter(item -> item.getTeam().getId().equals(rival.getId()))
@@ -294,9 +332,11 @@ public class MainService {
             List<GameWeekResult> gameWeekResults = gameWeekResultRepository.findByTeamAndGameWeekLessThan(team, gameWeek + 1);
             int sumPoint = gameWeekResults.stream().mapToInt(GameWeekResult::getLocalPoint).sum();
             double sumMoney = gameWeekResults.stream().mapToDouble(GameWeekResult::getMoney).sum();
+            double sumH2hMoney = gameWeekResults.stream().mapToDouble(GameWeekResult::getH2hMoney).sum();
             team.setPoint(sumPoint);
-            team.setMoney(sumMoney);
+            team.setMoney(sumMoney + sumH2hMoney);
             team.setVoucher(gameWeekResultRepository.countAllByTeamAndVoucherIsTrue(team));
+            team.setGameWeekWinnerReward(gameWeekResults.stream().filter(gwr -> gwr.getGameWeekWinnerMoney() != null).mapToDouble(GameWeekResult::getGameWeekWinnerMoney).sum());
         });
 
         teams.sort(Comparator.comparing(Team::getPoint).reversed());
@@ -326,18 +366,18 @@ public class MainService {
     public void updateCurrentGameWeekAllTeamsPoint() throws IOException {
         updateAllTeamsPoint(null);
     }
-    public void updateAllTeamsPoint(Integer gameWeek) throws IOException {
-        HttpGet gwHttpGet = new HttpGet("https://fantasy.premierleague.com/api/entry/536158/");
-        gwHttpGet.addHeader("Content-Type", "application/json");
-        HttpClientBuilder gwBuilder = HttpClientBuilder.create();
-        HttpClient gwClient = gwBuilder.build();
-        HttpResponse gwResponse = gwClient.execute(gwHttpGet);
+
+    public Integer getCurrentGameWeek() throws IOException {
+        String uri = "https://fantasy.premierleague.com/api/entry/536158/";
+        HttpResponse gwResponse = Utils.requestGet(uri);
 
         HttpEntity gwEntity = gwResponse.getEntity();
         String gwResult = EntityUtils.toString(gwEntity, "UTF-8");
         JSONObject gwEntry = new JSONObject(gwResult);
-
-        int currentGameWeek = gameWeek == null ? gwEntry.getInt("current_event") : gameWeek;
+        return gwEntry.getInt("current_event");
+    }
+    public void updateAllTeamsPoint(Integer gameWeek) throws IOException {
+        int currentGameWeek = gameWeek == null ? getCurrentGameWeek() : gameWeek;
 
         List<Team> teams = teamRepository.findAll();
         teams.forEach(team -> {
@@ -351,15 +391,13 @@ public class MainService {
         updateClassicOrderAndMoney(currentGameWeek);
     }
     public void updatePointFromAPIs(long teamId, int currentGameWeek) throws IOException {
-        HttpGet httpGet = new HttpGet("https://fantasy.premierleague.com/api/entry/" + teamId + "/event/" + currentGameWeek + "/picks/");
-        httpGet.addHeader("Content-Type", "application/json");
-        HttpClientBuilder builder = HttpClientBuilder.create();
-        HttpClient client = builder.build();
-        HttpResponse response = client.execute(httpGet);
+        String uri = "https://fantasy.premierleague.com/api/entry/" + teamId + "/event/" + currentGameWeek + "/picks/";
+        HttpResponse response = Utils.requestGet(uri);
 
         HttpEntity entity = response.getEntity();
         String result = EntityUtils.toString(entity, "UTF-8");
         JSONObject jsonObject = new JSONObject(result);
+        if (jsonObject.isNull("entry_history")) return;
         JSONObject entry = jsonObject.getJSONObject("entry_history");
 
         GameWeekPointDTO dto = new GameWeekPointDTO();
@@ -372,6 +410,108 @@ public class MainService {
         updateGameWeekResult(dto);
     }
 
+    public void addTeamsByLeagueId(String leagueId) throws IOException {
+        String uri = "https://fantasy.premierleague.com/api/leagues-classic/" + leagueId + "/standings/?page_new_entries=1&page_standings=1&phase=1";
+        HttpResponse response = Utils.requestGet(uri);
+
+        HttpEntity entity = response.getEntity();
+        String result = EntityUtils.toString(entity, "UTF-8");
+        JSONObject resultObject = new JSONObject(result);
+        JSONObject newEntries = resultObject.getJSONObject("standings");
+        JSONArray teamArr = newEntries.getJSONArray("results");
+        List<Team> teams = new ArrayList<>();
+        teamArr.forEach(team -> {
+            JSONObject teamObj = (JSONObject) team;
+            Long teamId = teamObj.getLong("entry");
+            String fplName = teamObj.getString("entry_name");
+            String userName = teamObj.getString("player_name");
+
+            Team t = Team.builder()
+                    .fplId(teamId)
+                    .fplName(fplName)
+                    .name(userName)
+                    .build();
+            teams.add(t);
+        });
+        teamRepository.saveAll(teams);
+    }
+
+    private Integer getAverageByGameWeek(Integer gameWeek) throws IOException {
+        String uri = "https://fantasy.premierleague.com/api/leagues-h2h-matches/league/437074/?page=1&event=" + gameWeek;
+        HttpResponse response = Utils.requestGet(uri);
+
+        HttpEntity entity = response.getEntity();
+        String result = EntityUtils.toString(entity, "UTF-8");
+        JSONObject resultObject = new JSONObject(result);
+        JSONArray resultsArray = resultObject.getJSONArray("results");
+        AtomicReference<Integer> average = new AtomicReference<>(0);
+        resultsArray.forEach(pair -> {
+            JSONObject pairObj = (JSONObject) pair;
+
+            if (pairObj.isNull("entry_1_entry")) {
+                average.set(pairObj.getInt("entry_1_points"));
+            }
+            if (pairObj.isNull("entry_2_entry")) {
+                average.set(pairObj.getInt("entry_2_points"));
+            }
+        });
+
+        return average.get();
+    }
+
+    public RewardDTO getRewards() throws IOException {
+        List<Team> top3LeaguePoint = teamRepository.findTop3ByOrderByPositionAsc();
+        List<TopDTO> top3LeaguePointDTO = top3LeaguePoint.stream().map(TopDTO::new).collect(Collectors.toList());
+
+        List<GameWeekResult> topGWPoint = gameWeekResultRepository.findByPoint();
+        List<TopDTO> topGWPointDTO = topGWPoint.stream().map(TopDTO::new).collect(Collectors.toList());
+
+        Team topDonate = teamRepository.findFirstByOrderByMoneyAsc();
+        TopDTO topDonateDTO = new TopDTO(topDonate);
+        topDonateDTO.setData(topDonate.getMoney().intValue());
+
+        List<Team> gameWeekWinnerReward = teamRepository.findTop1Winners();
+        List<TopDTO> gameWeekWinnerRewardDTO = gameWeekWinnerReward.stream().map(winner -> {
+            TopDTO topDTO = new TopDTO(winner);
+            topDTO.setData(winner.getGameWeekWinnerReward().intValue());
+            return topDTO;
+        }).collect(Collectors.toList());
+
+        return RewardDTO.builder()
+                .top3LeaguePoint(top3LeaguePointDTO)
+                .topGWPoint(topGWPointDTO)
+                .topDonate(topDonateDTO)
+                .gameWeekWinnerReward(gameWeekWinnerRewardDTO)
+                .top3H2H(getTop3H2H())
+                .build();
+    }
+
+    private List<TopDTO> getTop3H2H() throws IOException {
+        String uri = "https://fantasy.premierleague.com/api/leagues-h2h/437074/standings/?page_new_entries=1&page_standings=1";
+        HttpResponse response = Utils.requestGet(uri);
+
+        HttpEntity entity = response.getEntity();
+        String result = EntityUtils.toString(entity, "UTF-8");
+        JSONObject resultObject = new JSONObject(result);
+        JSONObject standingsObject = resultObject.getJSONObject("standings");
+        JSONArray resultsArray = standingsObject.getJSONArray("results");
+
+        List<TopDTO> topH2H = new ArrayList<>();
+        resultsArray.forEach(stand -> {
+            JSONObject standObj = (JSONObject) stand;
+            if (!standObj.isNull("rank") && standObj.getInt("rank") == 1) {
+                topH2H.add(new TopDTO(1, standObj.getString("entry_name"), standObj.getString("player_name"), standObj.getInt("points_for")));
+            }
+            if (!standObj.isNull("rank") && standObj.getInt("rank") == 2) {
+                topH2H.add(new TopDTO(2, standObj.getString("entry_name"), standObj.getString("player_name"), standObj.getInt("points_for")));
+            }
+            if (!standObj.isNull("rank") && standObj.getInt("rank") == 3) {
+                topH2H.add(new TopDTO(3, standObj.getString("entry_name"), standObj.getString("player_name"), standObj.getInt("points_for")));
+            }
+        });
+
+        return topH2H;
+    }
 }
 
 class CountMoney {

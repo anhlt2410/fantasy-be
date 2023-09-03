@@ -9,5 +9,5 @@ import java.util.List;
 @Getter
 @Setter
 public class ListListH2HDTO {
-    List<ListH2HDTO> list = new ArrayList<>();
+    List<GameWeekH2HDTO> list = new ArrayList<>();
 }

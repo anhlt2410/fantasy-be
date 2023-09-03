@@ -10,6 +10,7 @@ public class Constant {
 
     public static final Double UNIT_PRICE = -10000D;
     public static final Double TOP_BONUS_PRICE = 10000D;
+    public static final Double VOUCHER = 50000D;
 
     public static final Double STEP = 10000D;
 

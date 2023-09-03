@@ -78,13 +78,13 @@ public class Controller {
     }
 
     @PostMapping("/update-league-result")
-    public ResponseEntity<GameWeekResultDTO> updateLeagueResult(@RequestBody GameWeekPointDTO dto) {
+    public ResponseEntity<GameWeekResultDTO> updateLeagueResult(@RequestBody GameWeekPointDTO dto) throws IOException {
         GameWeekResultDTO gameWeekResultDTO = mainService.updateGameWeekResult(dto);
         return new ResponseEntity<GameWeekResultDTO>(gameWeekResultDTO, HttpStatus.OK);
     }
 
     @PostMapping("/update-fixture")
-    public ResponseEntity<String> updateFixture(@RequestBody ListH2HDTO dtos) {
+    public ResponseEntity<String> updateFixture(@RequestBody GameWeekH2HDTO dtos) {
         String result = mainService.updateFixture(dtos);
         return new ResponseEntity<String>(result, HttpStatus.OK);
     }
@@ -104,8 +104,8 @@ public class Controller {
 
 
     @GetMapping("/currentGameweek")
-    public ResponseEntity<Integer> currentGameweek() {
-        return new ResponseEntity<Integer>(gameWeekResultRepository.getMaxGameWeek(), HttpStatus.OK);
+    public ResponseEntity<Integer> currentGameweek() throws IOException {
+        return new ResponseEntity<Integer>(mainService.getCurrentGameWeek(), HttpStatus.OK);
     }
 
 
@@ -115,5 +115,15 @@ public class Controller {
         return new ResponseEntity<Integer>(Constant.CURRENT_GW, HttpStatus.OK);
     }
 
+    @GetMapping("/add-teams-by-league-id/{id}")
+    public ResponseEntity<?> addTeams(@PathVariable(name = "id") String id) throws IOException {
+        mainService.addTeamsByLeagueId(id);
+        return ResponseEntity.ok("OK");
+    }
+
+    @GetMapping("/get-rewards")
+    public ResponseEntity<?> getRewards() throws IOException {
+        return ResponseEntity.ok(mainService.getRewards());
+    }
 
 }

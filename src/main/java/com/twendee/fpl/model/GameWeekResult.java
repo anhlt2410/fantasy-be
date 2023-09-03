@@ -37,4 +37,6 @@ public class GameWeekResult extends BaseEntity{
     @Column(length = 1)
     @Convert(converter = BooleanYnConverter.class)
     private Boolean voucher;
+
+    private Double gameWeekWinnerMoney = 0D;
 }

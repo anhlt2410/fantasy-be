@@ -16,12 +16,12 @@ public class GameWeekRepositoryImpl implements GameWeekRepositoryCustom {
     EntityManager entityManager;
 
     @Override
-    public GameWeekResult findByGameWeekAndTeam(Integer gameWeek, Team team) {
-        TypedQuery<GameWeekResult> query
+    public GameWeekResult findByGameWeekAndTeamId(Integer gameWeek, Long teamId) {
+        Query query
                 = entityManager.createQuery(
-                "SELECT g FROM GameWeekResult g WHERE g.gameWeek = :gameWeek and g.team = :team", GameWeekResult.class);
-        query.setParameter("gameWeek", gameWeek).setParameter("team", team);
-        return query.getSingleResult();
+                "SELECT g FROM GameWeekResult g WHERE g.gameWeek = :gameWeek and g.team.fplId = :teamId");
+        query.setParameter("gameWeek", gameWeek).setParameter("teamId", teamId);
+        return (GameWeekResult) query.getSingleResult();
     }
 
     @Override
