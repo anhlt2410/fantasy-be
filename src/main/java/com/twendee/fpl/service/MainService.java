@@ -218,7 +218,7 @@ public class MainService {
             gameWeekResult.setLocalPoint(h2hPoint + gameWeekResult.getNextFreeTransferBonus() * 4);
         }
         gameWeekResultRepository.save(gameWeekResult);
-        updateClassicOrderAndMoney(dto.getGameWeek());
+//        updateClassicOrderAndMoney(dto.getGameWeek());
 
         return new GameWeekResultDTO(gameWeekResult);
     }
@@ -282,6 +282,12 @@ public class MainService {
                 moneyByPoint.put(gwResult.getLocalPoint(), new CountMoney(countIncrease, money > 0 ? money : 0));
 
             }
+
+            if (gwResult.getPosition() == 1) {
+                gwResult.setVoucher(true);
+            } else {
+                gwResult.setVoucher(false);
+            }
         }
 
         long numberOfTop1 = gameWeekResults.stream().filter(gwr -> gwr.getVoucher() != null && gwr.getVoucher()).count();
@@ -292,10 +298,7 @@ public class MainService {
             gwResult.setMoney(money * 1000);
 
             if (gwResult.getPosition() == 1) {
-                gwResult.setVoucher(true);
                 gwResult.setGameWeekWinnerMoney(VOUCHER/numberOfTop1);
-            } else {
-                gwResult.setVoucher(false);
             }
         }
 
