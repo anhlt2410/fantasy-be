@@ -16,7 +16,12 @@ public class Team extends BaseEntity{
     private Integer point = 0;
     private Integer position = 0;
     private Double money = 0D;
+    private Double paid = 0D;
     private Double h2hMoney = 0D;
     private Integer voucher;
     private Double gameWeekWinnerReward = 0D;
+
+    public Double getMoney() {
+        return money - paid;
+    }
 }

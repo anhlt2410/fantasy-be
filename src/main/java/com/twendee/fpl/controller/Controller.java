@@ -34,7 +34,7 @@ public class Controller {
         if (teams.isEmpty()) {
             return new ResponseEntity(HttpStatus.NO_CONTENT);
         }
-        return new ResponseEntity<List<Team>>(teams, HttpStatus.OK);
+        return new ResponseEntity<>(teams, HttpStatus.OK);
     }
 
     @PostMapping("/add-team")
@@ -98,6 +98,12 @@ public class Controller {
     @PostMapping("/update-all-team-points")
     public ResponseEntity<String> updateAllTeamPoint(@RequestParam("gameWeek") Integer gameWeek) throws IOException {
         mainService.updateAllTeamsPoint(gameWeek);
+        return new ResponseEntity<>("OK", HttpStatus.OK);
+    }
+
+    @PostMapping("/update-gw-result-until")
+    public ResponseEntity<String> updateGWResultUntil(@RequestParam(value = "gameWeek", required = false) Integer gameWeek) throws IOException {
+        mainService.updateGWResultUntil(gameWeek);
         return new ResponseEntity<>("OK", HttpStatus.OK);
     }
 

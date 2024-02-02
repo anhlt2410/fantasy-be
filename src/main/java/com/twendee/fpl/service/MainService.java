@@ -379,6 +379,13 @@ public class MainService {
         JSONObject gwEntry = new JSONObject(gwResult);
         return gwEntry.getInt("current_event");
     }
+
+    public void updateGWResultUntil(Integer gw) throws IOException {
+        int currentGameWeek = gw == null ? getCurrentGameWeek() : gw;
+        for (int i = 1; i <= currentGameWeek; i++) {
+            updateAllTeamsPoint(i);
+        }
+    }
     public void updateAllTeamsPoint(Integer gameWeek) throws IOException {
         int currentGameWeek = gameWeek == null ? getCurrentGameWeek() : gameWeek;
 
