@@ -22,6 +22,6 @@ public class Team extends BaseEntity{
     private Double gameWeekWinnerReward = 0D;
 
     public Double getMoney() {
-        return money - paid;
+        return money - (paid == null ? 0 : paid);
     }
 }
