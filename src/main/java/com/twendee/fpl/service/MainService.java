@@ -323,7 +323,7 @@ public class MainService {
     }
 
 
-    @Scheduled(cron = "0 0/10 * * * *")
+//    @Scheduled(cron = "0 0 * * * *")
     public void updateMainTable() {
         System.out.println("Start updateMainTable::" + new Date());
         Integer gameWeek = gameWeekResultRepository.getMaxGameWeek();
@@ -365,7 +365,7 @@ public class MainService {
 
     //Update points from FPL APIs
 
-    @Scheduled(cron = "0 0/10 * * * *")
+//    @Scheduled(cron = "0 0 * * * *")
     public void updateCurrentGameWeekAllTeamsPoint() throws IOException {
         updateAllTeamsPoint(null);
     }

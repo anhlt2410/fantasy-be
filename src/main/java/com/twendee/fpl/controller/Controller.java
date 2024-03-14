@@ -37,34 +37,34 @@ public class Controller {
         return new ResponseEntity<>(teams, HttpStatus.OK);
     }
 
-    @PostMapping("/add-team")
-    public ResponseEntity<String> addTeam(@RequestBody ListTeamDTO dto) {
-        String result = mainService.addTeam(dto);
-        if (result.equals("FAIL")){
-            return new ResponseEntity(HttpStatus.BAD_REQUEST);
-        }
-        return new ResponseEntity<String>(result, HttpStatus.CREATED);
-    }
+//    @PostMapping("/add-team")
+//    public ResponseEntity<String> addTeam(@RequestBody ListTeamDTO dto) {
+//        String result = mainService.addTeam(dto);
+//        if (result.equals("FAIL")){
+//            return new ResponseEntity(HttpStatus.BAD_REQUEST);
+//        }
+//        return new ResponseEntity<String>(result, HttpStatus.CREATED);
+//    }
 
-    @GetMapping("/get-team-info/{id}")
-    public ResponseEntity<Team> getOne(@PathVariable(name = "id") Long id) {
-        Team team = teamRepository.findById(id).orElse(null);
-        if (team == null) {
-            return new ResponseEntity(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<Team>(team, HttpStatus.OK);
-    }
+//    @GetMapping("/get-team-info/{id}")
+//    public ResponseEntity<Team> getOne(@PathVariable(name = "id") Long id) {
+//        Team team = teamRepository.findById(id).orElse(null);
+//        if (team == null) {
+//            return new ResponseEntity(HttpStatus.NO_CONTENT);
+//        }
+//        return new ResponseEntity<Team>(team, HttpStatus.OK);
+//    }
 
-    @GetMapping("/get-game-week-info-by-team")
-    public ResponseEntity<GameWeekResultDTO> getGameWeekInfoByTeam(@RequestParam(name = "teamId") Long teamId,
-                                                                   @RequestParam(name = "gameWeek") Integer gameWeek) {
-        Team team = teamRepository.findById(teamId).orElse(null);
-        GameWeekResult gameWeekResult = gameWeekResultRepository.findByGameWeekAndTeam(gameWeek, team);
-        if (gameWeekResult == null) {
-            return new ResponseEntity(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<GameWeekResultDTO>(new GameWeekResultDTO(gameWeekResult), HttpStatus.OK);
-    }
+//    @GetMapping("/get-game-week-info-by-team")
+//    public ResponseEntity<GameWeekResultDTO> getGameWeekInfoByTeam(@RequestParam(name = "teamId") Long teamId,
+//                                                                   @RequestParam(name = "gameWeek") Integer gameWeek) {
+//        Team team = teamRepository.findById(teamId).orElse(null);
+//        GameWeekResult gameWeekResult = gameWeekResultRepository.findByGameWeekAndTeam(gameWeek, team);
+//        if (gameWeekResult == null) {
+//            return new ResponseEntity(HttpStatus.NO_CONTENT);
+//        }
+//        return new ResponseEntity<GameWeekResultDTO>(new GameWeekResultDTO(gameWeekResult), HttpStatus.OK);
+//    }
 
     @GetMapping("/get-tops")
     public ResponseEntity<List<TopDTO>> getTops() {
@@ -77,17 +77,17 @@ public class Controller {
         return new ResponseEntity<FullGameWeekResultDTO>(dto, HttpStatus.OK);
     }
 
-    @PostMapping("/update-league-result")
-    public ResponseEntity<GameWeekResultDTO> updateLeagueResult(@RequestBody GameWeekPointDTO dto) throws IOException {
-        GameWeekResultDTO gameWeekResultDTO = mainService.updateGameWeekResult(dto);
-        return new ResponseEntity<GameWeekResultDTO>(gameWeekResultDTO, HttpStatus.OK);
-    }
+//    @PostMapping("/update-league-result")
+//    public ResponseEntity<GameWeekResultDTO> updateLeagueResult(@RequestBody GameWeekPointDTO dto) throws IOException {
+//        GameWeekResultDTO gameWeekResultDTO = mainService.updateGameWeekResult(dto);
+//        return new ResponseEntity<GameWeekResultDTO>(gameWeekResultDTO, HttpStatus.OK);
+//    }
 
-    @PostMapping("/update-fixture")
-    public ResponseEntity<String> updateFixture(@RequestBody GameWeekH2HDTO dtos) {
-        String result = mainService.updateFixture(dtos);
-        return new ResponseEntity<String>(result, HttpStatus.OK);
-    }
+//    @PostMapping("/update-fixture")
+//    public ResponseEntity<String> updateFixture(@RequestBody GameWeekH2HDTO dtos) {
+//        String result = mainService.updateFixture(dtos);
+//        return new ResponseEntity<String>(result, HttpStatus.OK);
+//    }
 
     @PostMapping("/update-main-table")
     public ResponseEntity<String> updateMainTable() {
