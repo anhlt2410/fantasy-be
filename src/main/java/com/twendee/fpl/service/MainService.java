@@ -186,7 +186,7 @@ public class MainService {
         Team team = teamRepository.findByFplId(dto.getTeamId());
         GameWeekResult gameWeekResult = gameWeekResultRepository.findByGameWeekAndTeam(dto.getGameWeek(), team);
 
-        GameWeekH2HDTO gameWeekH2HDTO = getH2HFixturesByGameWeek(437074L, dto.getGameWeek());
+        GameWeekH2HDTO gameWeekH2HDTO = getH2HFixturesByGameWeek(1657297L, dto.getGameWeek());
         if (gameWeekResult == null) {
             gameWeekResult = new GameWeekResult();
             gameWeekResult.setGameWeek(dto.getGameWeek());
@@ -371,7 +371,7 @@ public class MainService {
     }
 
     public Integer getCurrentGameWeek() throws IOException {
-        String uri = "https://fantasy.premierleague.com/api/entry/536158/";
+        String uri = "https://fantasy.premierleague.com/api/entry/164029/";
         HttpResponse gwResponse = Utils.requestGet(uri);
 
         HttpEntity gwEntity = gwResponse.getEntity();
@@ -447,7 +447,7 @@ public class MainService {
     }
 
     private Integer getAverageByGameWeek(Integer gameWeek) throws IOException {
-        String uri = "https://fantasy.premierleague.com/api/leagues-h2h-matches/league/437074/?page=1&event=" + gameWeek;
+        String uri = "https://fantasy.premierleague.com/api/leagues-h2h-matches/league/1657297/?page=1&event=" + gameWeek;
         HttpResponse response = Utils.requestGet(uri);
 
         HttpEntity entity = response.getEntity();
@@ -497,7 +497,7 @@ public class MainService {
     }
 
     private List<TopDTO> getTop3H2H() throws IOException {
-        String uri = "https://fantasy.premierleague.com/api/leagues-h2h/437074/standings/?page_new_entries=1&page_standings=1";
+        String uri = "https://fantasy.premierleague.com/api/leagues-h2h/1657297/standings/?page_new_entries=1&page_standings=1";
         HttpResponse response = Utils.requestGet(uri);
 
         HttpEntity entity = response.getEntity();
