@@ -20,6 +20,7 @@ public class Team extends BaseEntity{
     private Double h2hMoney = 0D;
     private Integer voucher;
     private Double gameWeekWinnerReward = 0D;
+    private Boolean active;
 
     public Double getMoney() {
         return money - (paid == null ? 0 : paid);

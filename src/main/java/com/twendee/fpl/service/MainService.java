@@ -226,13 +226,14 @@ public class MainService {
 
     private void updateClassicOrderAndMoney(Integer gameWeek) {
         List<GameWeekResult> gameWeekResults = gameWeekResultRepository.findByGameWeek(gameWeek);
+        List<GameWeekResult> activeGameWeekResults = gameWeekResults.stream().filter(g -> g.getTeam().getActive()).collect(Collectors.toList());
 //        Integer leagueSize = gameWeekResults.size();
-        gameWeekResults.sort(Comparator.comparing(GameWeekResult::getLocalPoint).reversed());
+        activeGameWeekResults.sort(Comparator.comparing(GameWeekResult::getLocalPoint).reversed());
 
         List<GameWeekResult> nextGwBonusTeams = new ArrayList<>();
         int order = 1;
         GameWeekResult previous;
-        for (GameWeekResult result : gameWeekResults) {
+        for (GameWeekResult result : activeGameWeekResults) {
             result.setPosition(null);
         }
         for (GameWeekResult result : gameWeekResults) {
@@ -263,14 +264,14 @@ public class MainService {
             order++;
         }
 
-        gameWeekResults.sort(Comparator.comparing(GameWeekResult::getLocalPoint));
-        gameWeekResults.forEach(gw -> gw.setMoney(0d));
+        activeGameWeekResults.sort(Comparator.comparing(GameWeekResult::getLocalPoint));
+        activeGameWeekResults.forEach(gw -> gw.setMoney(0d));
 
         Map<Integer, CountMoney> moneyByPoint = new HashMap<>();
 
-        Integer MAX_MONEY = (int) (gameWeekResults.size() / 2 * STEP);
-        for (GameWeekResult gwResult : gameWeekResults) {
-            int index = gameWeekResults.indexOf(gwResult);
+        Integer MAX_MONEY = (int) (activeGameWeekResults.size() / 2 * STEP);
+        for (GameWeekResult gwResult : activeGameWeekResults) {
+            int index = activeGameWeekResults.indexOf(gwResult);
             if (moneyByPoint.get(gwResult.getLocalPoint()) == null) {
                 double money = MAX_MONEY - index * STEP;
                 moneyByPoint.put(gwResult.getLocalPoint(), new CountMoney(1, money > 0 ? money : 0));
@@ -290,9 +291,9 @@ public class MainService {
             }
         }
 
-        long numberOfTop1 = gameWeekResults.stream().filter(gwr -> gwr.getVoucher() != null && gwr.getVoucher()).count();
+        long numberOfTop1 = activeGameWeekResults.stream().filter(gwr -> gwr.getVoucher() != null && gwr.getVoucher()).count();
 
-        for (GameWeekResult gwResult : gameWeekResults) {
+        for (GameWeekResult gwResult : activeGameWeekResults) {
 
             double money = 0 - Math.ceil((moneyByPoint.get(gwResult.getLocalPoint()).money / moneyByPoint.get(gwResult.getLocalPoint()).count) / 1000);
             gwResult.setMoney(money * 1000);
@@ -302,7 +303,7 @@ public class MainService {
             }
         }
 
-        gameWeekResultRepository.saveAll(gameWeekResults);
+        gameWeekResultRepository.saveAll(activeGameWeekResults);
 //        gameWeekResultRepository.saveAll(nextGwBonusTeams);
     }
 
