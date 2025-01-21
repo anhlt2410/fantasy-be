@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -34,7 +35,8 @@ public class Controller {
         if (teams.isEmpty()) {
             return new ResponseEntity(HttpStatus.NO_CONTENT);
         }
-        return new ResponseEntity<>(teams, HttpStatus.OK);
+        List<Team> activeTeams = teams.stream().filter(Team::getActive).collect(Collectors.toList());
+        return new ResponseEntity<>(activeTeams, HttpStatus.OK);
     }
 
 //    @PostMapping("/add-team")

@@ -37,7 +37,7 @@ public class MainService {
     public FullGameWeekResultDTO getFullGameWeekResult(Integer gameWeek) {
         FullGameWeekResultDTO dto = new FullGameWeekResultDTO();
         List<GameWeekResult> gameWeekResults = gameWeekResultRepository.findByGameWeek(gameWeek);
-        List<GameWeekResultDTO> gameWeekResultDTOS = gameWeekResults.stream().map(GameWeekResultDTO::new).sorted(Comparator.comparing(GameWeekResultDTO::getPosition)).collect(Collectors.toList());
+        List<GameWeekResultDTO> gameWeekResultDTOS = gameWeekResults.stream().filter(g -> g.getTeam().getActive()).map(GameWeekResultDTO::new).sorted(Comparator.comparing(GameWeekResultDTO::getPosition)).collect(Collectors.toList());
         dto.getGameWeekResultDTOList().addAll(gameWeekResultDTOS);
 
         List<Long> doneList = new ArrayList<>();
