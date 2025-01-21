@@ -236,8 +236,8 @@ public class MainService {
         for (GameWeekResult result : activeGameWeekResults) {
             result.setPosition(null);
         }
-        for (GameWeekResult result : gameWeekResults) {
-            previous = order == 1 ? result : gameWeekResults.get(order - 2);
+        for (GameWeekResult result : activeGameWeekResults) {
+            previous = order == 1 ? result : activeGameWeekResults.get(order - 2);
             Integer rivalPoint = getRivalPoint(gameWeek, result.getRival(), gameWeekResults);
             if (rivalPoint != null && result.getH2hPoint() < rivalPoint) {
                 result.setH2hMoney(UNIT_PRICE);
