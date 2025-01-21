@@ -75,7 +75,7 @@ public class MainService {
         List<GameWeekResult> topPoint = gameWeekResultRepository.findByPoint();
         tops.addAll(topPoint.stream().map(TopDTO::new).collect(Collectors.toList()));
 
-        Team team = teamRepository.findFirstByOrderByMoneyAsc();
+        Team team = teamRepository.findTop1ByOrderByPositionAsc().get(0);
         tops.add(new TopDTO(team));
 
         return tops;

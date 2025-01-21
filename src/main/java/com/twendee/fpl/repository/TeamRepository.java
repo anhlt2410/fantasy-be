@@ -17,5 +17,8 @@ public interface TeamRepository extends JpaRepository<Team, Long>, TeamRepositor
     @Query(value = "SELECT t FROM Team t WHERE t.gameWeekWinnerReward > 0 ORDER BY t.gameWeekWinnerReward DESC")
     List<Team> findTop1Winners();
 
+    @Query(value = "SELECT t FROM Team t WHERE t.active = true ORDER BY (t.money - t.paid) ASC")
+    List<Team> findTop1ByOrderByPositionAsc();
+
     Team findFirstByOrderByMoneyAsc();
 }

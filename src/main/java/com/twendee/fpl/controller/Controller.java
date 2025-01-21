@@ -36,6 +36,11 @@ public class Controller {
             return new ResponseEntity(HttpStatus.NO_CONTENT);
         }
         List<Team> activeTeams = teams.stream().filter(Team::getActive).collect(Collectors.toList());
+        int n = 1;
+        for (Team activeTeam : activeTeams) {
+            activeTeam.setPosition(n);
+            n++;
+        }
         return new ResponseEntity<>(activeTeams, HttpStatus.OK);
     }
 

@@ -22,7 +22,7 @@ public interface GameWeekResultRepository extends JpaRepository<GameWeekResult, 
     @Query(value = "SELECT max(gameWeek) FROM GameWeekResult")
     Integer getMaxGameWeek();
 
-    @Query(value = "SELECT g FROM GameWeekResult g WHERE g.localPoint = (select max(g.localPoint) from GameWeekResult g)")
+    @Query(value = "SELECT g FROM GameWeekResult g WHERE g.localPoint = (select max(g.localPoint) from GameWeekResult g JOIN Team t ON t.id = g.team.id WHERE t.active = true)")
     List<GameWeekResult> findByPoint();
 
     Integer countAllByTeamAndVoucherIsTrue(Team team);
