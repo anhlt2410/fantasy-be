@@ -76,7 +76,10 @@ public class MainService {
         tops.addAll(topPoint.stream().map(TopDTO::new).collect(Collectors.toList()));
 
         Team team = teamRepository.findTop1ByOrderByPositionAsc().get(0);
-        tops.add(new TopDTO(team));
+        TopDTO topDonator = new TopDTO(team);
+        Double money = team.getMoney() - team.getPaid();
+        topDonator.setData(money.intValue());
+        tops.add(topDonator);
 
         return tops;
     }

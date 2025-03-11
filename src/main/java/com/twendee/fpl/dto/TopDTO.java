@@ -28,4 +28,11 @@ public class TopDTO {
         this.topUserFplName = team.getFplName();
         this.data = team.getPoint();
     }
+
+    public TopDTO(Team team, Integer data) {
+        this.rank = team.getPosition();
+        this.topUserName = team.getName();
+        this.topUserFplName = team.getFplName();
+        this.data = data;
+    }
 }
